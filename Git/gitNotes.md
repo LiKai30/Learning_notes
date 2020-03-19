@@ -15,7 +15,7 @@
   >
   > 每次你提交或者要在git中保存项目的状态时，git仅仅是制作快照(像拍照一样记录所有文件在那个时刻的样子)，并保存指向这个快照的引用。
 
-  因此在Git中，快照应理解为整个系统或者应用在某个时刻的状态记录。s实际上它就是一个备份，但这个备份不是像我们粘贴复制那么简单，git会处理，压缩，你可以使用这个快照恢复原来的状态。git会根据当前的内容生成一个校验和，是以此校验和为索引。每次提交，检测到校验和变化，就会生成一个新的快照，未更改的文件，则会链接到上一次的快照。这样就形成了一条链（这里先讨论没有其他分支的情况），git有一个HEAD指针，这个指针可以移动，这个指针移动到哪个快照，你就可以查看该快照也就是当时的状态。
+  因此在Git中，快照应理解为整个系统或者应用在某个时刻的状态记录。实际上它就是一个备份，但这个备份不是像我们粘贴复制那么简单，git会处理，压缩，你可以使用这个快照恢复原来的状态。git会根据当前的内容生成一个校验和，是以此校验和为索引。每次提交，检测到校验和变化，就会生成一个新的快照，未更改的文件，则会链接到上一次的快照。这样就形成了一条链（这里先讨论没有其他分支的情况），git有一个HEAD指针，这个指针可以移动，这个指针移动到哪个快照，你就可以查看该快照也就是当时的状态。
 
 - Github是用Git做版本控制的代码托管平台，类似的还有码云
 
@@ -48,16 +48,18 @@ $ git init
 ```bash
 $ git add <file>
 $ git commit -m "description"
+//新版本的可以简写为：
+git commit -am 'description'
 ```
 `git add`提交到暂存区（也叫index索引区），告诉Git开始对这些文件进行跟踪，以备下次提交生成快照。可以反复多次使用，添加多个文件，
 
 `git commit`可以一次提交很多文件，`-m`后面输入的是本次提交的说明，可以输入任意内容，不使用该参数会尝试打开编辑器以填写提交信息。
 
-**从快照的角度**：当 `git commit` 命令执行时，默认情况下它只会检查暂存区域，因此 `git add` 是用来确定下一次提交时快照的样子的。`git commit`命令将所有通过 `git add` 暂存的文件内容在数据库中创建一个持久的快照，然后将当前分支上的分支指针移到其之上。
+**从快照的角度**：当 `git commit` 命令执行时，默认情况下它只会检查暂存区域，因此 `git add` 是用来确定下一次提交时快照的样子。`git commit`命令将所有通过 `git add` 暂存的文件内容在数据库中创建一个持久的快照，然后将当前分支上的分支指针head移到其之上。
 
 ### 工作区、暂存区和版本库
 
-**工作区**：在电脑里能看到的目录；
+**工作区**：在电脑里能看到的目录，包含.git目录的目录；
 **版本库**：在工作区有一个隐藏目录`.git`，是Git的版本库。
 **暂存区**：Git的版本库中存了很多东西，其中最重要的就是称为stage（或者称为index）的暂存区，还有Git自动创建的`master`（分支），以及指向`master`的指针`HEAD`。
 
@@ -105,6 +107,17 @@ $ git reflog
 $ git reset --hard HEAD^
 ```
 以上命令是返回上一个版本，在Git中，用`HEAD`表示当前版本，上一个版本就是`HEAD^`，上上一个版本是`HEAD^^`，往上100个版本写成`HEAD~100`。
+
+简单来说：`--hard`就是删除提交记录并不保存所删除记录所做的更改。--soft删除记录并保存了提交所做的更改。
+
+> 参数详解：
+>
+> 1. --hard：它将重置HEAD返回到另外一个commit(取决于~12的参数），重置index以便反映HEAD的变化，并且重置working copy也使得其完全匹配起来。这是一个比较危险的动作，具有破坏性，数据因此可能会丢失！如果真是发生了数据丢失又希望找回来，那么只有使用：[git reflog](http://blog.csdn.net/ibingow/article/details/7541402)命令了。makes everything match the commit you have reset to.你的所有本地修改将丢失。如果我们希望彻底丢掉本地修改但是又不希望更改branch所指向的commit，则执行git reset --hard = git reset --hard HEAD. i.e. don't change the branch but get rid of all local changes.另外一个场景是简单地移动branch从一个到另一个commit而保持index/work区域同步。这将确实令你丢失你的工作，因为它将修改你的work tree！
+>
+> 2. --soft：它告诉Git重置HEAD到另外一个commit，但也到此为止。如果你指定--soft参数，Git将停止在那里而什么也不会根本变化。这意味着index,working copy都不会做任何变化，所有的在original HEAD和你重置到的那个commit之间的所有变更集都放在stage(index)区域中。
+>
+> 3. --mixed：是reset的默认参数，也就是当你不指定任何参数时的参数。它将重置HEAD到另外一个commit,并且重置index以便和HEAD相匹配，但是也到此为止。working copy不会被更改。所有该branch上从original HEAD（commit）到你重置到的那个commit之间的所有变更将作为local modifications保存在working area中，（被标示为local modification or untracked via git status)，但是并未staged的状态，你可以重新检视然后再做修改和commit
+
 ### 回退指定版本号
 ```bash
 $ git reset --hard commit_id
@@ -140,7 +153,7 @@ $ git reset HEAD <file>
 ```bash
 $ git checkout -- <file>
 ```
-##### 丢弃版本库的修改
+#### 丢弃版本库的修改
 
 版本回退操作`$ git reset --hard commit_id`
 
@@ -165,7 +178,7 @@ $ git add <file>
 
 `$ git rm -f <file>-`强制删除
 
-#### 进一步的解释
+#### 进一步的解释删除
 
 Q：比如执行了`rm text.txt` 误删了怎么恢复？
 A：执行`git checkout -- text.txt` 把版本库的东西重新写回工作区就行了，前提是之前提交过该文件。
@@ -174,11 +187,45 @@ Q：如果执行了`git rm text.txt`我们会发现工作区的text.txt也删除
 A：先撤销暂存区修改，重新放回工作区，然后再从版本库写回到工作区
 
 ```bash
-$ git reset head text.txt
+$ git reset HEAD text.txt
 $ git checkout -- text.txt
 ```
+
 Q：如果真的想从版本库里面删除文件怎么做？
 A：执行`git commit -m "delete text.txt"`，提交后最新的版本库将不包含这个文件
+
+### 删除提交记录
+
+`git reset --soft`删除提交记录，但是保存修改。
+
+如果想要删除提交列表中的一个或多个：
+
+- 一个或者连续的提交使用rebase
+
+  ```bash
+  git rebase --onto <branch name>~<first commit number to remove> <branch name>~<first commit to be kept> <branch name>
+  ```
+
+  执行rebase的时候可能出现冲突。解决冲突后执行`git add .`最后`git rebasse --continue`
+
+- 不连续的使用 `cherry-pick`
+
+#### 删除远程的提交记录
+
+需要先删除本地commit，并同步到服务器。
+
+1. ```bash
+   git reset --hard commit_id
+   git push  origin HEAD --force
+   ```
+
+2. 使用git revert可以删除某一次提交，并为本次删除生成一个新的提交。也就是说不是把之前的提交记录抹去，在提交记录中还是能看到之前的提交，并且有一个新的revert提交，把之前的提交取消掉。
+
+   ```bash
+   git revert <commitId>
+   ```
+
+   该命令提交一个新的版本，将需要revert的版本的内容再反向修改回去，版本会递增，不影响之前提交的内容
 
 ### 移动或者重命名文件
 
@@ -206,7 +253,7 @@ $ ssh-keygen -t rsa -C "youremail@example.com"
 
    注意：GitHub给出的地址不止一个，还可以用https://github.com/michaelliao/gitskills.git这样的地址。实际上，Git支持多种协议，默认的git://使用ssh，但也可以使用https等其他协议。
 
-   使用https除了速度慢以外，还有个最大的麻烦是每次推送都必须输入口令，但是在某些只开放http端口的公司内部就无法使用ssh协议而只能用https。
+   使用https除了速度慢以外，还有个最大的麻烦是每次推送都必须输入口令，而且在某些只开放http端口的公司内部就无法使用ssh协议而只能用https。
 
 #### 推送到远程仓库
 ```bash
@@ -251,10 +298,41 @@ $ git checkout -b <branchname>
 $ git merge <branchname>
 ```
 
+默认为fast forward模式，看不出来曾经做过合并。
+
 该命令有以下两种用途：
 
 1. 用于git-pull中，来整合另一代码仓库中的变化（即：git pull = git fetch + git merge）
 2. 用于从一个分支到另一个分支的合并
+
+> 参数：
+>
+> 1. git merge --abort：将会抛弃合并过程并且尝试重建合并前的状态。但是，当合并开始时如果存在未commit的文件，git merge --abort在某些情况下将无法重现合并前的状态。（特别是这些未commit的文件在合并的过程中将会被修改时），此时建议使用git-stash命令将这些未commit文件暂存起来，并在解决冲突以后使用git stash pop把这些未commit文件还原出来。
+> 2. git merge --squash：用来把一些不必要commit进行压缩，比如说，你的feature在开发的时候写的commit很乱，那么我们合并的时候不希望把这些历史commit带过来，于是使用--squash进行合并，此时文件已经同合并后一样了，但不移动HEAD，不提交。需要进行一次额外的commit来“总结”一下，然后完成最终的合并。
+> 3. git merge --no-ff:强行关闭fast-forward方式，生成一个新的提交。能够更好的查看 merge历史，以及branch 状态。
+
+#### rebase
+
+可以理解成是“重新设置基线”，将你的当前分支重新设置开始点。这个时候才能知道你当前分支于你需要比较的分支之间的差异。
+
+> 原理很简单：rebase需要基于一个分支来设置你当前的分支的基线，这基线就是当前分支的开始时间轴向后移动到最新的跟踪分支的最后面，这样你的当前分支就是最新的跟踪分支。这里的操作是基于文件事务处理的，所以你不用怕中间失败会影响文件的一致性。在中间的过程中你可以随时取消rebase 事务。
+
+rebase会把你当前分支的 commit 放到公共分支的最后面,所以叫变基。就好像你从公共分支又重新拉出来这个分支一样。
+
+举例:如果你从 master 拉了个feature分支出来,然后你提交了几个 commit,这个时候刚好有人把他开发的东西合并到 master 了,这个时候 master 就比你拉分支的时候多了几个 commit,如果这个时候你 rebase master 的话，就会把你当前的几个 commit，放到那个人 commit 的后面。
+
+而**merge** 会把公共分支和你当前的commit 合并在一起，形成一个新的 commit 提交
+
+**注意:**
+
+- 不要在公共分支使用rebase
+
+  因为往后放的这些 commit 都是新的,这样其他从这个公共分支拉出去的人，都需要再 rebase,相当于你 rebase 东西进来，就都是新的 commit 了
+
+- 本地和远端对应同一条分支,优先使用rebase,而不是merge
+
+举个例子：如果你自己开发分支一直在做,然后某一天，你想把主线的修改合到你的分支上,做一次集成。这种情况就用rebase比较好，rebase之后把你的提交都放在主线修改的头上，
+如果用merge，会生成一个新的merge提交，你如果想回退你分支上的某个提交就很麻烦,
 
 #### 分支重命名
 
@@ -262,7 +340,7 @@ $ git merge <branchname>
 1、本地分支重命名
 git branch -m oldName  newName
 2、将重命名后分支推送到远程
-git push origin nexName
+git push origin newName
 3、删除远程旧的分支
 git push --delete oldName
 ```
@@ -286,6 +364,12 @@ $ git log --graph
  通常情况下，Git合并默认是Fast forward模式，但这种模式删除分支后，会丢失分支信息
 
 > 举例来说，开发一直在master分支进行，但忽然有一个新的想法，于是新建了一个dev的分支，并在其上进行一系列提交，完成时，回到master分支，此时，master分支在创建dev分支之后并未产生任何新的commit。此时的合并就叫`fast forward`。
+>
+> 而如果回到master分支后，master分支也有提交，且他们俩的提交是对不同文件或者同一文件的不同部分进行了修改，Git 可以合并它们，并产生一次新的提交分别指向master和dev最后一次提交。
+>
+> 还有一种情况就是，master和dev修改的是同一个文件的同一部分，进行了不同的修改，此时就产生了冲突，git无法进行干净的合并，此时git已经做了合并，但是会有一些提示（你打开文件就知道了），并暂停下来等待解决冲突。这时候你可以使用git merge --abort抛弃合并过程并且尝试重建合并前的状态。
+>
+> 也可以使用git status来查看那些因包含合并冲突而处于未合并（unmerged）状态的文件，Git 会在有冲突的文件中加入标准的冲突解决标记，然后手动解决冲突（或者使用git mergetool），再提交。
 >
 > 两种合并模式的对比：
 >
