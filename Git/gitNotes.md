@@ -243,12 +243,32 @@ $ git checkout <branchname>
 $ git checkout -b <branchname>
 ```
 
+注意：如果创建的新分支名与原有的一个分支名相同，那么原有的分支将会被覆盖。
+
 #### 合并某分支到当前分支
+
 ```bash
 $ git merge <branchname>
 ```
 
+该命令有以下两种用途：
+
+1. 用于git-pull中，来整合另一代码仓库中的变化（即：git pull = git fetch + git merge）
+2. 用于从一个分支到另一个分支的合并
+
+#### 分支重命名
+
+```git
+1、本地分支重命名
+git branch -m oldName  newName
+2、将重命名后分支推送到远程
+git push origin nexName
+3、删除远程旧的分支
+git push --delete oldName
+```
+
 #### 删除分支
+
 ```bash
 $ git branch -d <branchname>      
 出现error：the branch "xxx" is not fully merged的报错信息
@@ -348,9 +368,52 @@ $ git push origin branch-name
 ```
 如果推送失败（说明远程分支比你的本地分支更新），先用git pull抓取远程的新提交；
 #### 从远程抓取分支
+
+当远程仓库有了新的提交，我们需要把更新的内容取回本地：
+
+```bash
+$ git fetch origin <branch>
+```
+
+- 上面命令将某个远程主机的更新，全部取回本地(指定branch，则取回特定分支的更新);
+- git fetch命令通常用来查看其他人的进程，因为它**取回的代码对你本地的开发代码没有影响**;
+
+**代码合并：**
+
+```shell
+## 在本地新建一个temp分支，并将远程origin仓库的master分支代码下载到本地temp分支；
+$ git fetch origin master:temp
+
+## 比较本地代码与刚刚从远程下载下来的代码的区别；
+$ git diff temp
+
+## 合并temp分支到本地的master分支;
+$ git merge temp
+
+## 如果不想保留temp分支，删除;
+$ git branch -d temp
+```
+
+```shell
+git fetch
+```
+
+- 创建并更新本地远程分支。即创建并更新origin/xxx 分支，拉取代码到origin/xxx分支上;
+- 在FETCH_HEAD中设定当前分支-origin/当前分支对应，如直接到时候git merge就可以将origin/abc合并到abc分支上;
+
+```bash
+git fetch origin
+```
+
+- 手动指定了要fetch的remote。在不指定分支时通常默认为master；
+
 ```bash
 $ git pull
 ```
+> git pull相当于git fetch + git merge
+>
+> git fetch相当于是从远程获取最新版本到本地，但不会自动merge。如果需要有选择的合并git fetch是更好的选择。效果相同时git pull将更为快捷;
+
 如果git pull提示no tracking information，则说明本地分支和远程分支的链接关系没有创建，则先创建关联，再抓取远程分支，然后在本地进行合并，解决冲突，再推送。
 
 ### 标签管理
